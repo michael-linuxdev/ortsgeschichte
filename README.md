@@ -24,4 +24,5 @@ Oben im Script von `index.html`: `CONFIG.europeanaKey` – eigenen Europeana-Key
 ## APIs
 - DDB v2 Solr: `/2/search/index/search/select` (Objekte), `/2/search/index/newspaper-issues/select` (Zeitungsportal, Volltext in `plainpagefulltext`) – kein API-Key nötig
 - Europeana Search API: `record/v2/search.json`
+- Bilder: Sortierung (Relevanz, älteste/neueste, Zufall mit Seed, beste Qualität) und Zeitraum-Filter. Europeana kann nicht nach Jahr sortieren – das wird pro Seite im Browser einsortiert
 - Zeitungs-Ausschnitte kommen per Solr-Highlighting (`hl=true`); falls die API das nicht liefert, fällt die App automatisch auf den Volltext zurück
