@@ -40,11 +40,14 @@
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:.88rem}
   .chip:hover{border-color:var(--accent)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip.on .meta{color:#f3e3d6}
+  #decades .chip{white-space:nowrap}
   .opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.85rem;color:var(--muted);margin-bottom:12px;min-height:28px}
   .opts:empty{display:none}
   .opts select{font:inherit;padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff}
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
-  .tab{background:none;border:0;padding:10px 12px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+  .tab{background:none;border:0;padding:10px 6px;font-size:clamp(.8rem,3.6vw,.95rem);flex:1 0 auto;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
   .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
   .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
   .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.85rem}
@@ -82,6 +85,8 @@
   details.debug{margin-top:28px;font-size:.8rem;color:var(--muted)}
   details.debug pre{white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
   .foot{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted);line-height:1.6}
+  #toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translate(-50%,20px);background:#1f1d1a;color:#fff;padding:10px 16px;border-radius:999px;font-size:.85rem;opacity:0;transition:.25s;pointer-events:none;z-index:60;white-space:nowrap}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
   /* Viewer */
   .viewer{position:fixed;inset:0;background:#15130f;z-index:50;display:flex;flex-direction:column;color:#eee}
   .viewer[hidden]{display:none}
@@ -112,10 +117,10 @@
   <div class="chips" id="chips"></div>
 
   <nav class="tabs" id="tabs">
-    <button class="tab active" data-tab="today">Heute vor 100 Jahren</button>
+    <button class="tab active" data-tab="today">Vor 100 Jahren</button>
     <button class="tab" data-tab="papers">Zeitungen</button>
     <button class="tab" data-tab="images">Bilder</button>
-    <button class="tab" data-tab="favs">Merkliste <span id="favCount"></span></button>
+    <button class="tab" data-tab="favs">★ Merkliste<span id="favCount"></span></button>
   </nav>
   <div class="opts" id="opts"></div>
 
@@ -156,7 +161,7 @@ const DEBUG = new URLSearchParams(location.search).has("debug");
 const HL_PRE = "⟦", HL_POST = "⟧";
 
 const $ = s => document.querySelector(s);
-const state = { tab:"today", place:"Wittichenau", pages:{}, noHL:false, freeOnly:true, sort:"score desc", imgSort:"rel", period:"all", seed:newSeed(), items:{}, cards:{} };
+const state = { tab:"today", place:"Wittichenau", pages:{}, noHL:false, freeOnly:true, sort:"score desc", imgSort:"rel", period:"all", paperDecade:null, dateSortOK:null, seed:newSeed(), items:{}, cards:{} };
 function newSeed(){ return Math.floor(Math.random()*1e6); }
 const cache = new Map();
 
@@ -174,7 +179,7 @@ async function getJSON(url){
   let r;
   try { r = await fetch(url); }
   catch(e){ throw new Error(navigator.onLine===false ? "Du bist offline. Die Suche braucht eine Internetverbindung – deine Merkliste funktioniert trotzdem." : "Die Datenquelle ist gerade nicht erreichbar. Bitte später nochmal versuchen."); }
-  if(!r.ok) throw new Error("Die Datenquelle hat mit Fehler " + r.status + " geantwortet.");
+  if(!r.ok){ const err = new Error("Die Datenquelle hat mit Fehler " + r.status + " geantwortet."); err.status = r.status; throw err; }
   const j = await r.json();
   cache.set(url, j);
   return j;
@@ -251,19 +256,24 @@ function toggleFav(key){
   if(favs[key]) delete favs[key];
   else if(state.cards[key]) favs[key] = { html: state.cards[key], item: state.items[key], ts: Date.now() };
   saveFavs(favs); updateFavUI();
+  toast(favs[key] ? "Gemerkt – zu finden im Tab „★ Merkliste“" : "Aus der Merkliste entfernt");
   if(state.tab==="favs") renderFavs();
+}
+function toast(msg){
+  let t = $("#toast"); if(!t){ t = document.createElement("div"); t.id="toast"; document.body.appendChild(t); }
+  t.textContent = msg; t.className = "show"; clearTimeout(t._h); t._h = setTimeout(()=>t.className="", 2600);
 }
 function updateFavUI(){
   document.querySelectorAll("[data-fav]").forEach(b=>{ const on=!!favs[b.dataset.fav]; b.classList.toggle("on",on); b.textContent=on?"★":"☆"; });
-  const n = Object.keys(favs).length; $("#favCount").textContent = n? `(${n})` : "";
+  const n = Object.keys(favs).length; $("#favCount").textContent = n? ` (${n})` : "";
 }
 /* Karte registrieren: HTML für Merkliste + Daten für Viewer */
 function register(key, item, html){ state.items[key]=item; state.cards[key]=html; return html; }
 
 /* ---------- Zeitungen ---------- */
-async function fetchPapers(place, start, extraFq){
+async function fetchPapers(place, start, extraFq, sort="score desc"){
   const fl = "id,paper_title,publication_date,pagenumber,thumbnail,preview_reference,place_of_distribution,provider";
-  const p = new URLSearchParams({ q: "plainpagefulltext:" + solrPhrase(place), rows: CONFIG.rows, start, sort: state.sort });
+  const p = new URLSearchParams({ q: "plainpagefulltext:" + solrPhrase(place), rows: CONFIG.rows, start, sort });
   if(state.noHL){
     p.set("fl", fl + ",plainpagefulltext");
   } else {
@@ -277,10 +287,26 @@ async function fetchPapers(place, start, extraFq){
   if(!state.noHL && res.response.numFound > 0){
     const hl = res.highlighting || {};
     const any = res.response.docs.some(d => hl[d.id] && hl[d.id].plainpagefulltext && hl[d.id].plainpagefulltext.length);
-    if(!any){ state.noHL = true; log("Highlighting nicht verfügbar – Fallback auf Volltext"); return fetchPapers(place, start, extraFq); }
+    if(!any){ state.noHL = true; log("Highlighting nicht verfügbar – Fallback auf Volltext"); return fetchPapers(place, start, extraFq, sort); }
   }
   return res;
 }
+
+/* Jahrzehnte mit Trefferzahl (Solr facet.range) – Basis für Zeitleiste und chronologisches Blättern */
+async function paperDecades(place){
+  const p = new URLSearchParams({ q: "plainpagefulltext:" + solrPhrase(place), rows: "0", facet: "true",
+    "facet.range": "publication_date", "facet.range.start": "1600-01-01T00:00:00Z",
+    "facet.range.end": "2030-01-01T00:00:00Z", "facet.range.gap": "+10YEARS" });
+  try{
+    const res = await getJSON(`${DDB}/newspaper-issues/select?${p}`);
+    const c = (((res.facet_counts||{}).facet_ranges||{}).publication_date||{}).counts || [];
+    const out = [];
+    for(let i=0;i<c.length;i+=2) if(c[i+1]>0) out.push({ year: parseInt(String(c[i]).slice(0,4),10), n: c[i+1] });
+    return out;
+  }catch(e){ log("Jahrzehnte nicht verfügbar: "+e.message); return []; }
+}
+const decadeFq = y => `publication_date:[${y}-01-01T00:00:00Z TO ${y+9}-12-31T23:59:59Z]`;
+const byDate = dir => (a,b) => dir * (new Date(a.publication_date) - new Date(b.publication_date));
 
 function nsNote(iso){
   const y = new Date(iso).getFullYear();
@@ -410,7 +436,7 @@ function renderOpts(){
       <option value="all">alle</option><option value="pre1900">vor 1900</option><option value="1900-1945">1900–1945</option><option value="post1945">nach 1945</option></select></label>
     <label><input type="checkbox" id="freeOnly"${state.freeOnly?" checked":""}> nur frei nutzbar</label>`;
   else o.innerHTML = "";
-  const s=$("#sort"); if(s){ s.value=state.sort; s.onchange=()=>{ state.sort=s.value; render(); }; }
+  const s=$("#sort"); if(s){ s.value=state.sort; s.onchange=()=>{ state.sort=s.value; state.paperDecade=null; render(); }; }
   const f=$("#freeOnly"); if(f) f.onchange=()=>{ state.freeOnly=f.checked; render(); };
   const is=$("#imgSort"); if(is){ is.value=state.imgSort; is.onchange=()=>{ state.imgSort=is.value; if(is.value==="random") state.seed=newSeed(); render(); }; }
   const pe=$("#period"); if(pe){ pe.value=state.period; pe.onchange=()=>{ state.period=pe.value; render(); }; }
@@ -449,15 +475,51 @@ async function renderPapers(more=false){
   const pg = state.pages.papers = more ? (state.pages.papers||0)+1 : 0;
   if(!more) v.innerHTML = `<div class="spinner">Lade Zeitungen …</div>`;
   try{
-    const res = await fetchPapers(place, pg*CONFIG.rows);
+    const decades = await paperDecades(place);
+    const dateSort = state.sort !== "score desc";
+    const dir = state.sort === "publication_date asc" ? 1 : -1;
+    let decade = state.paperDecade;
+    let res, walk = false;
+
+    /* 1. Versuch: Server sortiert nach Datum */
+    if(dateSort && state.dateSortOK !== false){
+      try{ res = await fetchPapers(place, pg*CONFIG.rows, decade!=null ? decadeFq(decade) : null, state.sort); state.dateSortOK = true; }
+      catch(e){ if(e.status >= 500){ state.dateSortOK = false; log("Datumssortierung vom Server abgelehnt – chronologisch über Jahrzehnte"); } else throw e; }
+    }
+    /* 2. Fallback: chronologisch Jahrzehnt für Jahrzehnt */
+    if(!res && dateSort){
+      walk = true;
+      if(decade == null && decades.length){ decade = state.paperDecade = (dir>0 ? decades[0] : decades[decades.length-1]).year; }
+      res = await fetchPapers(place, pg*CONFIG.rows, decade!=null ? decadeFq(decade) : null);
+      res.response.docs.sort(byDate(dir));
+    }
+    if(!res) res = await fetchPapers(place, pg*CONFIG.rows, decade!=null ? decadeFq(decade) : null);
     if(state.tab!=="papers" || state.place!==place) return;
+
     const n = res.response.numFound, html = res.response.docs.map(d=>paperCard(d,place,res.highlighting)).join("");
+    const ordered = (!dateSort || dir>0) ? decades : decades.slice().reverse();
+    const idx = ordered.findIndex(d=>d.year===decade);
+    const next = (walk && idx>=0) ? ordered[idx+1] : null;
     if(!more){
-      v.innerHTML = `<div class="stats"><div class="stat"><b>${num(n)}</b>Zeitungsseiten erwähnen „${esc(place)}“</div></div>
-        <div class="list" id="plist">${html}</div>${n>CONFIG.rows?'<button class="more" id="pmore">Mehr laden</button>':""}`;
+      const total = decades.reduce((a,d)=>a+d.n,0);
+      const chips = decades.length ? `<div class="chips" id="decades" style="flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">
+          ${walk?"":`<button class="chip${decade==null?" on":""}" data-decade="">Alle</button>`}
+          ${ordered.map(d=>`<button class="chip${d.year===decade?" on":""}" data-decade="${d.year}">${d.year}er <span class="meta">${num(d.n)}</span></button>`).join("")}
+        </div>` : "";
+      v.innerHTML = `<div class="stats"><div class="stat"><b>${num(decade!=null ? n : (total||n))}</b>Zeitungsseiten erwähnen „${esc(place)}“${decade!=null?` in den ${decade}ern`:""}</div></div>
+        ${chips}
+        ${walk?`<div class="meta" style="margin-bottom:10px">Chronologisch Jahrzehnt für Jahrzehnt – innerhalb eines Jahrzehnts seitenweise nach Datum sortiert.</div>`:""}
+        <div class="list" id="plist">${html}</div>
+        <div id="pnav"></div>`;
+      const sc = $("#decades .chip.on"); if(sc) sc.scrollIntoView({inline:"center", block:"nearest"});
     } else { $("#plist").insertAdjacentHTML("beforeend", html); }
-    const mb = $("#pmore"); if(mb){ mb.onclick=()=>renderPapers(true); if((pg+1)*CONFIG.rows>=n) mb.remove(); }
-  }catch(e){ if(more){ const mb=$("#pmore"); if(mb) mb.insertAdjacentHTML("beforebegin", errBox(e)); } else v.innerHTML = errBox(e); }
+    const nav = $("#pnav");
+    if((pg+1)*CONFIG.rows < n) nav.innerHTML = '<button class="more" id="pmore">Mehr laden</button>';
+    else if(next) nav.innerHTML = `<button class="more" id="pnext">Weiter mit den ${next.year}ern →</button>`;
+    else nav.innerHTML = "";
+    const mb = $("#pmore"); if(mb) mb.onclick=()=>renderPapers(true);
+    const nb = $("#pnext"); if(nb) nb.onclick=()=>{ state.paperDecade = next.year; renderPapers(); window.scrollTo({top: $("#tabs").offsetTop, behavior:"smooth"}); };
+  }catch(e){ if(more){ const nav=$("#pnav"); if(nav) nav.insertAdjacentHTML("afterbegin", errBox(e)); } else v.innerHTML = errBox(e); }
 }
 
 async function renderImages(more=false){
@@ -566,9 +628,10 @@ document.addEventListener("click", async e=>{
   const c = e.target.closest("[data-copy]");
   if(c){ try{ await navigator.clipboard.writeText(c.dataset.copy); c.textContent="kopiert ✓"; }catch{ c.textContent="Kopieren nicht möglich"; } return; }
   const f = e.target.closest("[data-fav]"); if(f){ toggleFav(f.dataset.fav); return; }
+  const dc = e.target.closest("[data-decade]"); if(dc){ state.paperDecade = dc.dataset.decade ? parseInt(dc.dataset.decade,10) : null; renderPapers(); return; }
   const o = e.target.closest("[data-open]"); if(o){ openViewer(o.dataset.open); }
 });
-function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; state.seed=newSeed(); render(); }
+function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; state.seed=newSeed(); state.paperDecade=null; render(); }
 
 /* ---------- PWA ---------- */
 if(DEBUG) $("#debug").hidden = false;
