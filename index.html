@@ -6,8 +6,12 @@
 <title>Ortsgeschichte – Die Geschichte deines Ortes</title>
 <meta name="description" content="Alte Zeitungen, Fotos und Karten zu deinem Ort – aus der Deutschen Digitalen Bibliothek und Europeana.">
 <meta name="theme-color" content="#f6f3ee">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ortsgeschichte">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <link rel="preload" href="assets/fonts/fraunces-600.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238a3b12'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' font-weight='700' text-anchor='middle' fill='%23f6f3ee'%3EO%3C/text%3E%3C/svg%3E">
 <style>
   @font-face{font-family:"Fraunces";src:url(assets/fonts/fraunces-600.woff2) format("woff2");font-weight:600;font-display:swap}
   @font-face{font-family:"Inter";src:url(assets/fonts/inter-400.woff) format("woff");font-weight:400;font-display:swap}
@@ -18,114 +22,143 @@
     --bg:#f6f3ee; --card:#fff; --ink:#1f1d1a; --muted:#6f685e; --line:#e4ddd2;
     --accent:#8a3b12; --accent-soft:#f3e3d6; --ok:#2f6b3a; --ok-soft:#e1efe3;
     --warn:#8a6a12; --warn-soft:#f5ecd2; --bad:#8a1f1f; --bad-soft:#f5dddd;
+    --serif:"Fraunces",Georgia,serif; --read:"Pagella","Palatino Linotype",Palatino,Georgia,serif;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"cv11","ss01";background:var(--bg);color:var(--ink);line-height:1.45}
-  header{padding:20px 16px 8px;max-width:1100px;margin:0 auto}
-  h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:2rem;letter-spacing:-.01em;margin:0}
+  header{padding:20px 16px 8px;max-width:1100px;margin:0 auto;display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+  h1{font-family:var(--serif);font-weight:600;font-size:2rem;letter-spacing:-.01em;margin:0}
   .sub{color:var(--muted);font-size:.9rem;margin-top:2px}
   main{max-width:1100px;margin:0 auto;padding:0 16px 60px}
   .search{display:flex;gap:8px;margin:14px 0 8px}
-  .search input{flex:1;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
-  button{font:inherit;cursor:pointer}
+  .search input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  button{font:inherit;cursor:pointer;color:inherit}
   .btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 16px;font-weight:600}
+  .btn-ghost{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.82rem;white-space:nowrap}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
   .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:.88rem}
   .chip:hover{border-color:var(--accent)}
-  .opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.88rem;color:var(--muted);margin-bottom:12px}
-  .opts input[type=text]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px}
-  .opts select{padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff}
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+  .opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.85rem;color:var(--muted);margin-bottom:12px;min-height:28px}
+  .opts:empty{display:none}
+  .opts select{font:inherit;padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
   .tab{background:none;border:0;padding:10px 12px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
   .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
   .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
   .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.85rem}
-  .stat b{font-family:"Fraunces",Georgia,serif;font-size:1.25rem;display:block}
+  .stat b{font-family:var(--serif);font-size:1.25rem;display:block}
   .list{display:flex;flex-direction:column;gap:10px}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-  .card .img{background:#eee8de;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+  .card .img{background:#eee8de;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem;border:0;padding:0;width:100%}
   .card .img img{width:100%;height:100%;object-fit:cover;display:block}
   .card .body{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
   .paper{display:flex;gap:12px;padding:12px}
-  .paper .thumb{width:72px;flex:0 0 72px;height:96px;background:#eee8de;border-radius:6px;overflow:hidden}
+  .paper .thumb{width:72px;flex:0 0 72px;height:96px;background:#eee8de;border-radius:6px;overflow:hidden;border:0;padding:0}
   .paper .thumb img{width:100%;height:100%;object-fit:cover}
-  .t{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.02rem;line-height:1.25}
+  .t{font-family:var(--serif);font-weight:600;font-size:1.02rem;line-height:1.25;padding-right:30px}
   .meta{color:var(--muted);font-size:.8rem}
-  .snip{font-family:"Pagella","Palatino Linotype",Palatino,Georgia,serif;font-size:1rem;line-height:1.5;background:#faf7f2;border-left:3px solid var(--accent-soft);padding:6px 10px;border-radius:4px}
-  mark{background:#ffe08a;padding:0 2px;border-radius:2px}
+  .snip{font-family:var(--read);font-size:1rem;line-height:1.5;background:#faf7f2;border-left:3px solid var(--accent-soft);padding:6px 10px;border-radius:4px}
+  .snip.empty{font-family:inherit;font-size:.82rem;color:var(--muted)}
+  mark{background:#ffe08a;padding:0 2px;border-radius:2px;color:inherit}
   .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px}
-  .b-ok{background:var(--ok-soft);color:var(--ok)}
-  .b-warn{background:var(--warn-soft);color:var(--warn)}
-  .b-bad{background:var(--bad-soft);color:var(--bad)}
-  .b-src{background:#eceae6;color:#444}
+  .b-ok{background:var(--ok-soft);color:var(--ok)} .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-bad{background:var(--bad-soft);color:var(--bad)} .b-src{background:#eceae6;color:#444}
   .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .links{font-size:.8rem;display:flex;flex-wrap:wrap;gap:4px 12px}
+  .links button{border:0;background:none;color:var(--accent);padding:0;text-decoration:underline;font-size:.8rem}
   .attr{font-size:.75rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:auto}
   .attr button{border:0;background:none;color:var(--accent);padding:0;font-size:.75rem;text-decoration:underline}
+  .fav{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.92);font-size:1.05rem;line-height:1;color:var(--muted)}
+  .fav.on{color:var(--accent);border-color:var(--accent)}
+  .ns{background:var(--warn-soft);color:#5c4708;border-radius:8px;padding:8px 10px;font-size:.8rem}
   a{color:var(--accent)}
   .note{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.9rem;color:var(--muted)}
   .err{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:12px;font-size:.88rem;margin-bottom:10px}
   .more{margin:14px auto 0;display:block;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 18px}
+  .spinner{color:var(--muted);font-size:.9rem;padding:12px 0}
   details.debug{margin-top:28px;font-size:.8rem;color:var(--muted)}
   details.debug pre{white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
-  .spinner{color:var(--muted);font-size:.9rem;padding:12px 0}
   .foot{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted);line-height:1.6}
-  h2{font-family:"Fraunces",Georgia,serif;font-size:1.15rem;margin:18px 0 8px}
+  /* Viewer */
+  .viewer{position:fixed;inset:0;background:#15130f;z-index:50;display:flex;flex-direction:column;color:#eee}
+  .viewer[hidden]{display:none}
+  .vbar{display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));font-size:.82rem;color:#bbb}
+  .vbar .x{background:#2a2620;border:0;color:#fff;border-radius:999px;width:36px;height:36px;font-size:1.1rem}
+  .vstage{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;display:flex}
+  .vstage img{max-width:100%;max-height:100%;margin:auto;display:block;cursor:zoom-in;object-fit:contain}
+  .vstage.zoomed img{max-width:none;max-height:none;width:250%;cursor:zoom-out}
+  .vinfo{background:#1f1c17;padding:12px 14px;padding-bottom:max(12px,env(safe-area-inset-bottom));font-size:.82rem;max-height:34vh;overflow:auto}
+  .vinfo .t{color:#fff;padding-right:0}
+  .vinfo .meta,.vinfo .attr{color:#aaa}
+  .vinfo a,.vinfo .attr button{color:#f0b48c}
 </style>
 </head>
 <body>
 <header>
-  <h1>Ortsgeschichte</h1>
-  <div class="sub">Die Geschichte deines Ortes – aus alten Zeitungen, Fotos und Karten</div>
+  <div>
+    <h1>Ortsgeschichte</h1>
+    <div class="sub">Die Geschichte deines Ortes – aus alten Zeitungen, Fotos und Karten</div>
+  </div>
+  <button class="btn-ghost" id="installBtn" hidden>App installieren</button>
 </header>
 <main>
   <form class="search" id="form">
-    <input id="place" placeholder="Ort eingeben, z. B. Wittichenau" value="Wittichenau" autocomplete="off">
+    <input id="place" placeholder="Ort eingeben, z. B. Wittichenau" value="Wittichenau" autocomplete="off" enterkeyhint="search">
     <button class="btn" type="submit">Suchen</button>
   </form>
   <div class="chips" id="chips"></div>
-  <div class="opts">
-    <label><input type="checkbox" id="freeOnly" checked> nur frei nutzbar</label>
-    <label>Sortierung Zeitungen
-      <select id="sort">
-        <option value="score desc">Relevanz</option>
-        <option value="publication_date asc">älteste zuerst</option>
-        <option value="publication_date desc">neueste zuerst</option>
-      </select>
-    </label>
-    <label>Europeana-Key <input type="text" id="ekey" value="api2demo"></label>
-  </div>
 
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="today">Heute vor 100 Jahren</button>
     <button class="tab" data-tab="papers">Zeitungen</button>
     <button class="tab" data-tab="images">Bilder</button>
+    <button class="tab" data-tab="favs">Merkliste <span id="favCount"></span></button>
   </nav>
+  <div class="opts" id="opts"></div>
 
   <section id="view"></section>
 
-  <details class="debug">
+  <details class="debug" id="debug" hidden>
     <summary>Debug: API-Aufrufe</summary>
     <pre id="log"></pre>
   </details>
+
   <footer class="foot">
-    Daten: <a href="https://www.deutsche-digitale-bibliothek.de" target="_blank" rel="noopener">Deutsche Digitale Bibliothek</a> und <a href="https://www.europeana.eu" target="_blank" rel="noopener">Europeana</a>. Rechte an den Inhalten liegen bei den jeweiligen Einrichtungen; Lizenz steht an jedem Treffer.<br>
-    Deine Suche wird direkt aus deinem Browser an diese beiden Dienste gesendet. Diese Seite speichert nichts und setzt keine Cookies.<br>
+    Daten: <a href="https://www.deutsche-digitale-bibliothek.de" target="_blank" rel="noopener">Deutsche Digitale Bibliothek</a> und <a href="https://www.europeana.eu" target="_blank" rel="noopener">Europeana</a>. Rechte an den Inhalten liegen bei den jeweiligen Einrichtungen; die Lizenz steht an jedem Treffer.<br>
+    Deine Suche wird direkt aus deinem Browser an diese beiden Dienste gesendet. Die Merkliste bleibt nur auf deinem Gerät. Keine Cookies.<br>
+    <span id="iosHint" hidden>Auf dem iPhone installieren: Teilen-Symbol → „Zum Home-Bildschirm“.<br></span>
     Prototyp · <a href="https://micana.de" target="_blank" rel="noopener">micana.de</a>
   </footer>
 </main>
 
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Bildansicht">
+  <div class="vbar"><button class="x" id="vclose" aria-label="Schließen">✕</button><span>Tippen zum Zoomen · auf dem Handy auch mit zwei Fingern</span></div>
+  <div class="vstage" id="vstage"><img id="vimg" alt=""></div>
+  <div class="vinfo" id="vinfo"></div>
+</div>
+
 <script>
+/* ===== Konfiguration =====
+   Europeana-Key: eigenen Key beantragen (pro App einer) und hier eintragen.
+   Debug-Ansicht: Seite mit ?debug aufrufen. */
+const CONFIG = {
+  europeanaKey: "api2demo",
+  rows: 12,
+  presets: ["Wittichenau","Maukendorf","Pirna","Dresden"]
+};
 const DDB = "https://api.deutsche-digitale-bibliothek.de/2/search/index";
+const DDB_IIIF = "https://iiif.deutsche-digitale-bibliothek.de/image/2";
 const EUR = "https://api.europeana.eu/record/v2/search.json";
-const PRESETS = ["Wittichenau","Maukendorf","Pirna","Dresden"];
-const ROWS = 12;
+const DEBUG = new URLSearchParams(location.search).has("debug");
+const HL_PRE = "⟦", HL_POST = "⟧";
 
 const $ = s => document.querySelector(s);
-const state = { tab:"today", place:"Wittichenau", pages:{} };
+const state = { tab:"today", place:"Wittichenau", pages:{}, noHL:false, freeOnly:true, sort:"score desc", items:{}, cards:{} };
+const cache = new Map();
 
 /* ---------- Helpers ---------- */
-function log(msg){ const el=$("#log"); el.textContent = new Date().toLocaleTimeString()+"  "+msg+"\n"+el.textContent; }
+function log(msg){ if(!DEBUG) return; const el=$("#log"); el.textContent = new Date().toLocaleTimeString()+"  "+msg+"\n"+el.textContent; }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function first(v){ return Array.isArray(v) ? v[0] : v; }
 function solrPhrase(s){ return '"' + s.replace(/["\\]/g,"") + '"'; }
@@ -133,62 +166,70 @@ function fmtDate(iso){ if(!iso) return ""; const d=new Date(iso); return isNaN(d
 function num(n){ return Number(n||0).toLocaleString("de-DE"); }
 
 async function getJSON(url){
+  if(cache.has(url)){ log("CACHE "+url); return cache.get(url); }
   log("GET "+url);
   let r;
   try { r = await fetch(url); }
-  catch(e){ throw new Error("Netzwerk/CORS-Fehler – die API lässt sich von hier aus nicht abrufen. (" + e.message + ")"); }
-  if(!r.ok) throw new Error("HTTP " + r.status + " bei " + url.split("?")[0]);
-  return r.json();
+  catch(e){ throw new Error(navigator.onLine===false ? "Du bist offline. Die Suche braucht eine Internetverbindung – deine Merkliste funktioniert trotzdem." : "Die Datenquelle ist gerade nicht erreichbar. Bitte später nochmal versuchen."); }
+  if(!r.ok) throw new Error("Die Datenquelle hat mit Fehler " + r.status + " geantwortet.");
+  const j = await r.json();
+  cache.set(url, j);
+  return j;
 }
 
-/* Rechte-URL -> Label + Ampel */
 function rightsInfo(url, group){
   const u = (url||"").toLowerCase();
-  if(u.includes("publicdomain/mark")) return {label:"Gemeinfrei (PDM)", cls:"b-ok", attrib:false};
-  if(u.includes("publicdomain/zero")) return {label:"CC0", cls:"b-ok", attrib:false};
-  if(u.includes("/nc")||u.includes("-nc")) return {label:"CC "+ccParts(u)+" (nicht kommerziell)", cls:"b-warn", attrib:true};
-  if(u.includes("creativecommons.org/licenses")) return {label:"CC "+ccParts(u), cls:"b-ok", attrib:true};
-  if(u.includes("rightsstatements.org/vocab/inc")) return {label:"Urheberrechtlich geschützt", cls:"b-bad", attrib:true};
-  if(u.includes("rightsstatements.org/vocab/noc")) return {label:"Kein Urheberrecht (mit Auflagen)", cls:"b-warn", attrib:true};
-  if(u.includes("rightsstatements.org")) return {label:"Rechte unklar", cls:"b-warn", attrib:true};
-  if(group==="rights_001") return {label:"frei (rights_001)", cls:"b-ok", attrib:true};
-  if(group==="rights_002") return {label:"eingeschränkt (rights_002)", cls:"b-warn", attrib:true};
-  if(group==="rights_003") return {label:"geschützt (rights_003)", cls:"b-bad", attrib:true};
-  return {label:"Lizenz unbekannt", cls:"b-warn", attrib:true};
+  if(u.includes("publicdomain/mark")) return {label:"Gemeinfrei (PDM)", cls:"b-ok"};
+  if(u.includes("publicdomain/zero")) return {label:"CC0", cls:"b-ok"};
+  if(u.includes("/nc")||u.includes("-nc")) return {label:"CC "+ccParts(u)+" (nicht kommerziell)", cls:"b-warn"};
+  if(u.includes("creativecommons.org/licenses")) return {label:"CC "+ccParts(u), cls:"b-ok"};
+  if(u.includes("rightsstatements.org/vocab/inc")) return {label:"Urheberrechtlich geschützt", cls:"b-bad"};
+  if(u.includes("rightsstatements.org/vocab/noc")) return {label:"Kein Urheberrecht (mit Auflagen)", cls:"b-warn"};
+  if(u.includes("rightsstatements.org")) return {label:"Rechte unklar", cls:"b-warn"};
+  if(group==="rights_001") return {label:"frei nutzbar", cls:"b-ok"};
+  if(group==="rights_002") return {label:"eingeschränkt nutzbar", cls:"b-warn"};
+  if(group==="rights_003") return {label:"geschützt", cls:"b-bad"};
+  return {label:"Lizenz unbekannt", cls:"b-warn"};
 }
 function ccParts(u){ const m=u.match(/licenses\/([a-z-]+)\//); return m? m[1].toUpperCase() : ""; }
 
-/* OCR-Snippet um den Suchbegriff */
-function snippet(text, term, len=170){
-  if(!text) return "";
-  const t = String(Array.isArray(text)? text.join(" ") : text).replace(/ſ/g,"s").replace(/\s+/g," ");
+function cleanOcr(t){ return String(t||"").replace(/ſ/g,"s").replace(/\s+/g," ").trim(); }
+/* Snippet aus Solr-Highlighting (bevorzugt) */
+function hlSnippet(frag){
+  return "…" + esc(cleanOcr(frag)).split(HL_PRE).join("<mark>").split(HL_POST).join("</mark>") + "…";
+}
+/* Fallback: Snippet aus Volltext */
+function textSnippet(text, term, len=170){
+  const t = cleanOcr(Array.isArray(text)? text.join(" ") : text);
+  if(!t) return "";
   const i = t.toLowerCase().indexOf(term.toLowerCase());
   if(i<0) return esc(t.slice(0,len*2))+"…";
   const s = Math.max(0,i-len), e = Math.min(t.length,i+term.length+len);
   return (s>0?"…":"") + esc(t.slice(s,i)) + "<mark>"+esc(t.slice(i,i+term.length))+"</mark>" + esc(t.slice(i+term.length,e)) + (e<t.length?"…":"");
 }
 
-/* DDB: Tage seit Jahr 0 -> Jahr (Annäherung) */
 function ddbYear(days){ const d=first(days); return d? Math.floor(d/365.2425) : null; }
 
-/* Bild mit Fallback-Kette */
-function imgTag(urls, alt){
+function ddbThumbs(uuid){
+  if(!uuid) return [];
+  return [
+    `${DDB_IIIF}/${uuid}/full/!400,400/0/default.jpg`,
+    `https://api.deutsche-digitale-bibliothek.de/binary/${uuid}`,
+    `https://www.deutsche-digitale-bibliothek.de/binary/${uuid}/list/1.jpg`
+  ];
+}
+function ddbLarge(uuid){ return uuid ? [`${DDB_IIIF}/${uuid}/full/!2000,2000/0/default.jpg`, ...ddbThumbs(uuid)] : []; }
+
+function imgEl(urls, alt, cls){
   const list = urls.filter(Boolean);
-  if(!list.length) return '<div class="img">kein Vorschaubild</div>';
-  return `<div class="img"><img loading="lazy" alt="${esc(alt)}" src="${esc(list[0])}" data-fallbacks="${esc(list.slice(1).join("|"))}" onerror="nextImg(this)"></div>`;
+  if(!list.length) return "";
+  return `<img loading="lazy" decoding="async" alt="${esc(alt)}" src="${esc(list[0])}" data-fallbacks="${esc(list.slice(1).join("|"))}" onerror="nextImg(this)"${cls?` class="${cls}"`:""}>`;
 }
 function nextImg(img){
   const rest = (img.dataset.fallbacks||"").split("|").filter(Boolean);
   if(rest.length){ img.dataset.fallbacks = rest.slice(1).join("|"); img.src = rest[0]; }
-  else { img.parentElement.textContent = "Bild nicht ladbar"; }
-}
-function ddbBinary(uuid){
-  if(!uuid) return [];
-  return [
-    `https://api.deutsche-digitale-bibliothek.de/binary/${uuid}`,
-    `https://www.deutsche-digitale-bibliothek.de/binary/${uuid}/list/1.jpg`,
-    `https://iiif.deutsche-digitale-bibliothek.de/image/2/${uuid}/full/!400,400/0/default.jpg`
-  ];
+  else if(img.id==="vimg"){ img.alt="Bild konnte nicht geladen werden"; }
+  else { const p=img.parentElement; img.remove(); if(p && !p.textContent) p.textContent="Bild nicht ladbar"; }
 }
 
 function attribution(title, inst, rightsLabel, via, link){
@@ -197,93 +238,151 @@ function attribution(title, inst, rightsLabel, via, link){
     · <button type="button" data-copy="${esc(txt+" · "+link)}">Quelle kopieren</button></div>`;
 }
 
-/* ---------- Zeitungen (DDB newspaper-issues) ---------- */
-async function fetchPapers(place, start, extraFq){
-  const p = new URLSearchParams({
-    q: "plainpagefulltext:" + solrPhrase(place),
-    rows: ROWS, start,
-    sort: $("#sort").value,
-    fl: "id,paper_title,publication_date,pagenumber,thumbnail,preview_reference,place_of_distribution,provider,plainpagefulltext"
-  });
-  if(extraFq) p.append("fq", extraFq);
-  return getJSON(`${DDB}/newspaper-issues/select?${p}`);
+/* ---------- Merkliste (localStorage, nur auf diesem Gerät) ---------- */
+const FAV_KEY = "ortsgeschichte-favs-v1";
+function loadFavs(){ try{ return JSON.parse(localStorage.getItem(FAV_KEY)) || {}; }catch{ return {}; } }
+function saveFavs(f){ try{ localStorage.setItem(FAV_KEY, JSON.stringify(f)); }catch{} }
+let favs = loadFavs();
+function favBtn(key){ return `<button class="fav${favs[key]?" on":""}" data-fav="${esc(key)}" aria-label="Merken">${favs[key]?"★":"☆"}</button>`; }
+function toggleFav(key){
+  if(favs[key]) delete favs[key];
+  else if(state.cards[key]) favs[key] = { html: state.cards[key], item: state.items[key], ts: Date.now() };
+  saveFavs(favs); updateFavUI();
+  if(state.tab==="favs") renderFavs();
 }
-function paperCard(d, term){
-  const itemId = String(d.id||"").split("-FILE_")[0];
-  const link = `https://www.deutsche-digitale-bibliothek.de/newspaper/item/${itemId}`;
-  const thumbs = [d.preview_reference, ...ddbBinary(d.thumbnail)].filter(Boolean);
-  const title = first(d.paper_title) || "Zeitung";
-  const pageImg = thumbs[0];
-  const portalSearch = `https://www.deutsche-digitale-bibliothek.de/search/newspaper?query=${encodeURIComponent(term)}`;
-  return `<div class="card"><div class="paper">
-    <div class="thumb">${thumbs.length? `<img loading="lazy" src="${esc(thumbs[0])}" data-fallbacks="${esc(thumbs.slice(1).join("|"))}" onerror="nextImg(this)" alt="">`:""}</div>
-    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
-      <div class="t">${esc(title)}</div>
-      <div class="meta">${esc(fmtDate(d.publication_date))} · Seite ${esc(d.pagenumber??"?")} · ${esc((d.place_of_distribution||[]).join(", "))}</div>
-      <div class="snip">${snippet(d.plainpagefulltext, term)}</div>
-      <div class="row"><span class="badge b-src">DDB Zeitungsportal</span><span class="badge b-ok">i. d. R. gemeinfrei – prüfen</span></div>
-      <div class="meta">${pageImg?`<a href="${esc(pageImg)}" target="_blank" rel="noopener">Seitenbild öffnen</a> · `:""}<a href="${esc(link)}" target="_blank" rel="noopener">Ausgabe im Portal</a> · <a href="${esc(portalSearch)}" target="_blank" rel="noopener">Portalsuche</a></div>
-      ${attribution(title+", "+fmtDate(d.publication_date), first(d.provider), "Zeitungsportal", "Deutsche Digitale Bibliothek", link)}
-    </div></div></div>`;
+function updateFavUI(){
+  document.querySelectorAll("[data-fav]").forEach(b=>{ const on=!!favs[b.dataset.fav]; b.classList.toggle("on",on); b.textContent=on?"★":"☆"; });
+  const n = Object.keys(favs).length; $("#favCount").textContent = n? `(${n})` : "";
+}
+/* Karte registrieren: HTML für Merkliste + Daten für Viewer */
+function register(key, item, html){ state.items[key]=item; state.cards[key]=html; return html; }
+
+/* ---------- Zeitungen ---------- */
+async function fetchPapers(place, start, extraFq){
+  const fl = "id,paper_title,publication_date,pagenumber,thumbnail,preview_reference,place_of_distribution,provider";
+  const p = new URLSearchParams({ q: "plainpagefulltext:" + solrPhrase(place), rows: CONFIG.rows, start, sort: state.sort });
+  if(state.noHL){
+    p.set("fl", fl + ",plainpagefulltext");
+  } else {
+    p.set("fl", fl);
+    p.set("hl","true"); p.set("hl.fl","plainpagefulltext"); p.set("hl.snippets","1"); p.set("hl.fragsize","320");
+    p.set("hl.simple.pre",HL_PRE); p.set("hl.simple.post",HL_POST);
+    p.set("hl.tag.pre",HL_PRE); p.set("hl.tag.post",HL_POST);
+  }
+  if(extraFq) p.append("fq", extraFq);
+  const res = await getJSON(`${DDB}/newspaper-issues/select?${p}`);
+  if(!state.noHL && res.response.numFound > 0){
+    const hl = res.highlighting || {};
+    const any = res.response.docs.some(d => hl[d.id] && hl[d.id].plainpagefulltext && hl[d.id].plainpagefulltext.length);
+    if(!any){ state.noHL = true; log("Highlighting nicht verfügbar – Fallback auf Volltext"); return fetchPapers(place, start, extraFq); }
+  }
+  return res;
 }
 
-/* ---------- Bilder (DDB + Europeana) ---------- */
+function nsNote(iso){
+  const y = new Date(iso).getFullYear();
+  if(y>=1933 && y<=1945) return `<div class="ns"><b>Quelle aus der NS-Zeit.</b> Zeitungen von 1933–1945 standen unter staatlicher Kontrolle und können Propaganda sowie rassistische und antisemitische Inhalte enthalten. Sie werden hier als historisches Dokument gezeigt, nicht als Tatsachenbericht.</div>`;
+  return "";
+}
+
+function paperCard(d, term, hl){
+  const key = "zp:" + d.id;
+  const itemId = String(d.id||"").split("-FILE_")[0];
+  const link = `https://www.deutsche-digitale-bibliothek.de/newspaper/item/${itemId}`;
+  const portalSearch = `https://www.deutsche-digitale-bibliothek.de/search/newspaper?query=${encodeURIComponent(term)}`;
+  const title = first(d.paper_title) || "Zeitung";
+  const thumbs = [d.preview_reference, ...ddbThumbs(d.thumbnail)].filter(Boolean);
+  const large = [...(d.thumbnail? [`${DDB_IIIF}/${d.thumbnail}/full/!2000,2000/0/default.jpg`]:[]), d.preview_reference].filter(Boolean);
+  const frag = hl && hl[d.id] && first(hl[d.id].plainpagefulltext);
+  const snip = frag ? hlSnippet(frag) : (d.plainpagefulltext ? textSnippet(d.plainpagefulltext, term) : "");
+  const meta = `${fmtDate(d.publication_date)} · Seite ${d.pagenumber??"?"} · ${(d.place_of_distribution||[]).join(", ")}`;
+  const attr = attribution(title+", "+fmtDate(d.publication_date), first(d.provider), "Zeitungsportal", "Deutsche Digitale Bibliothek", link);
+  const item = { srcs: large.length? large : thumbs, title: title+", "+fmtDate(d.publication_date), info: `<div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${attr}` };
+  const html = `<div class="card">${favBtn(key)}<div class="paper">
+    <button class="thumb" data-open="${esc(key)}" aria-label="Seite ansehen">${imgEl(thumbs,"Zeitungsseite")}</button>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div class="t">${esc(title)}</div>
+      <div class="meta">${esc(meta)}</div>
+      ${nsNote(d.publication_date)}
+      <div class="snip${snip?"":" empty"}">${snip || "Kein Textausschnitt verfügbar – Seite ansehen."}</div>
+      <div class="row"><span class="badge b-src">DDB Zeitungsportal</span><span class="badge b-ok">i. d. R. gemeinfrei – prüfen</span></div>
+      <div class="links"><button type="button" data-open="${esc(key)}">Seite ansehen</button><a href="${esc(link)}" target="_blank" rel="noopener">Ausgabe im Portal</a><a href="${esc(portalSearch)}" target="_blank" rel="noopener">Portalsuche</a></div>
+      ${attr}
+    </div></div></div>`;
+  return register(key, item, html);
+}
+
+/* ---------- Bilder ---------- */
 async function fetchDdbImages(place, start){
   const p = new URLSearchParams({
-    q: solrPhrase(place), rows: ROWS, start,
+    q: solrPhrase(place), rows: CONFIG.rows, start,
     fl: "id,title,label,preview_store,license,license_group,provider,dataprovider_fct,place,begin_time",
     facet: "true", "facet.field": "place_fct", "facet.limit": "8"
   });
   p.append("fq","digitalisat:true");
   p.append("fq","type:mediatype_002");
-  if($("#freeOnly").checked) p.append("fq","license_group:rights_001");
+  if(state.freeOnly) p.append("fq","license_group:rights_001");
   return getJSON(`${DDB}/search/select?${p}`);
 }
 function ddbImageCard(d){
+  const key = "ddb:" + d.id;
   const title = first(d.title) || first(d.label) || "Ohne Titel";
   const m = String(d.preview_store||"").match(/thumbnail href=\\?"([^"\\]+)/);
+  const uuid = m && m[1];
   const r = rightsInfo(first(d.license), first(d.license_group));
   const inst = first(d.dataprovider_fct) || first(d.provider);
   const year = ddbYear(d.begin_time);
   const link = `https://www.deutsche-digitale-bibliothek.de/item/${d.id}`;
-  return `<div class="card">${imgTag(ddbBinary(m&&m[1]), title)}
-    <div class="body"><div class="t">${esc(title)}</div>
-    <div class="meta">${year? "ca. "+year+" · ":""}${esc((d.place||[]).join(", "))}</div>
-    <div class="row"><span class="badge b-src">DDB</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>
-    ${attribution(title, inst, r.label, "Deutsche Digitale Bibliothek", link)}</div></div>`;
+  const meta = `${year? "ca. "+year+" · ":""}${(d.place||[]).join(", ")}`;
+  const attr = attribution(title, inst, r.label, "Deutsche Digitale Bibliothek", link);
+  const badges = `<div class="row"><span class="badge b-src">DDB</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>`;
+  const item = { srcs: ddbLarge(uuid), title, info: `<div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${badges}${attr}` };
+  const html = `<div class="card">${favBtn(key)}<button class="img" data-open="${esc(key)}" aria-label="Bild vergrößern">${imgEl(ddbThumbs(uuid), title) || "kein Vorschaubild"}</button>
+    <div class="body"><div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${badges}${attr}</div></div>`;
+  return register(key, item, html);
 }
 async function fetchEuropeana(place, start){
   const p = new URLSearchParams({
-    wskey: $("#ekey").value.trim() || "api2demo",
-    query: solrPhrase(place), rows: ROWS, start: start+1,
+    wskey: CONFIG.europeanaKey, query: solrPhrase(place), rows: CONFIG.rows, start: start+1,
     thumbnail: "true", media: "true", profile: "standard"
   });
-  if($("#freeOnly").checked) p.set("reusability","open");
+  if(state.freeOnly) p.set("reusability","open");
   return getJSON(`${EUR}?${p}`);
 }
 function eurCard(it){
+  const key = "eur:" + it.id;
   const title = first(it.title) || "Ohne Titel";
   const r = rightsInfo(first(it.rights));
-  const geo = it.edmPlaceLatitude ? " · 📍 Koordinaten" : "";
-  return `<div class="card">${imgTag([first(it.edmPreview)], title)}
-    <div class="body"><div class="t">${esc(title)}</div>
-    <div class="meta">${esc(first(it.year)||"")}${geo}</div>
-    <div class="row"><span class="badge b-src">Europeana</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>
-    ${attribution(title, first(it.dataProvider), r.label, "Europeana", it.guid || "https://www.europeana.eu")}</div></div>`;
+  const meta = `${first(it.year)||""}${it.edmPlaceLatitude ? " · 📍 mit Koordinaten" : ""}`;
+  const link = it.guid || "https://www.europeana.eu";
+  const attr = attribution(title, first(it.dataProvider), r.label, "Europeana", link);
+  const badges = `<div class="row"><span class="badge b-src">Europeana</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>`;
+  const item = { srcs: [first(it.edmIsShownBy), first(it.edmPreview)].filter(Boolean), title, info: `<div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${badges}${attr}` };
+  const html = `<div class="card">${favBtn(key)}<button class="img" data-open="${esc(key)}" aria-label="Bild vergrößern">${imgEl([first(it.edmPreview)], title) || "kein Vorschaubild"}</button>
+    <div class="body"><div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${badges}${attr}</div></div>`;
+  return register(key, item, html);
 }
-/* Dubletten raus (gleicher Titel + gleiches Jahr/Bild) */
 function dedupe(cards){
   const seen = new Set();
   return cards.filter(c => { const k=c.key.toLowerCase().replace(/[^a-z0-9äöüß]/g,""); if(seen.has(k)) return false; seen.add(k); return true; });
 }
 
 /* ---------- Views ---------- */
+function renderOpts(){
+  const o = $("#opts");
+  if(state.tab==="papers") o.innerHTML = `<label>Sortierung <select id="sort">
+      <option value="score desc">Relevanz</option><option value="publication_date asc">älteste zuerst</option><option value="publication_date desc">neueste zuerst</option></select></label>`;
+  else if(state.tab==="images") o.innerHTML = `<label><input type="checkbox" id="freeOnly"${state.freeOnly?" checked":""}> nur frei nutzbare Bilder</label>`;
+  else o.innerHTML = "";
+  const s=$("#sort"); if(s){ s.value=state.sort; s.onchange=()=>{ state.sort=s.value; render(); }; }
+  const f=$("#freeOnly"); if(f) f.onchange=()=>{ state.freeOnly=f.checked; render(); };
+}
+
 async function renderToday(){
-  const place = state.place;
+  const place = state.place, v = $("#view");
   const now = new Date(); const y = now.getFullYear()-100;
   const mm = String(now.getMonth()+1).padStart(2,"0"), dd = String(now.getDate()).padStart(2,"0");
   const day = `${y}-${mm}-${dd}`;
-  const v = $("#view");
   v.innerHTML = `<div class="spinner">Suche Zeitungen vom ${fmtDate(day)} …</div>`;
   try{
     let res = await fetchPapers(place, 0, `publication_date:[${day}T00:00:00Z TO ${day}T23:59:59Z]`);
@@ -298,10 +397,11 @@ async function renderToday(){
       res = await fetchPapers(place, 0, `publication_date:[${y}-01-01T00:00:00Z TO ${y}-12-31T23:59:59Z]`);
       label = `im Jahr ${y}`;
     }
+    if(state.tab!=="today" || state.place!==place) return;
     const n = res.response.numFound;
     v.innerHTML = `<div class="stats"><div class="stat"><b>${num(n)}</b>Zeitungsseiten erwähnen „${esc(place)}“ ${esc(label)}</div></div>`
-      + (n? `<div class="list">${res.response.docs.map(d=>paperCard(d,place)).join("")}</div>`
-          : `<div class="note">Für ${esc(place)} gab es um ${y} keine Treffer. Probier den Tab „Zeitungen“ für alle Jahre.</div>`);
+      + (n? `<div class="list">${res.response.docs.map(d=>paperCard(d,place,res.highlighting)).join("")}</div>`
+          : `<div class="note">Für ${esc(place)} gab es um ${y} keine Treffer. Im Tab „Zeitungen“ findest du alle Jahre.</div>`);
   }catch(e){ v.innerHTML = errBox(e); }
 }
 
@@ -310,68 +410,127 @@ async function renderPapers(more=false){
   const pg = state.pages.papers = more ? (state.pages.papers||0)+1 : 0;
   if(!more) v.innerHTML = `<div class="spinner">Lade Zeitungen …</div>`;
   try{
-    const res = await fetchPapers(place, pg*ROWS);
-    const n = res.response.numFound, html = res.response.docs.map(d=>paperCard(d,place)).join("");
+    const res = await fetchPapers(place, pg*CONFIG.rows);
+    if(state.tab!=="papers" || state.place!==place) return;
+    const n = res.response.numFound, html = res.response.docs.map(d=>paperCard(d,place,res.highlighting)).join("");
     if(!more){
       v.innerHTML = `<div class="stats"><div class="stat"><b>${num(n)}</b>Zeitungsseiten erwähnen „${esc(place)}“</div></div>
-        <div class="list" id="plist">${html}</div>${n>ROWS?'<button class="more" id="pmore">Mehr laden</button>':""}`;
+        <div class="list" id="plist">${html}</div>${n>CONFIG.rows?'<button class="more" id="pmore">Mehr laden</button>':""}`;
     } else { $("#plist").insertAdjacentHTML("beforeend", html); }
-    const mb = $("#pmore"); if(mb){ mb.onclick=()=>renderPapers(true); if((pg+1)*ROWS>=n) mb.remove(); }
-  }catch(e){ v.innerHTML = errBox(e); }
+    const mb = $("#pmore"); if(mb){ mb.onclick=()=>renderPapers(true); if((pg+1)*CONFIG.rows>=n) mb.remove(); }
+  }catch(e){ if(more){ const mb=$("#pmore"); if(mb) mb.insertAdjacentHTML("beforebegin", errBox(e)); } else v.innerHTML = errBox(e); }
 }
 
 async function renderImages(more=false){
   const place = state.place, v = $("#view");
   const pg = state.pages.images = more ? (state.pages.images||0)+1 : 0;
   if(!more) v.innerHTML = `<div class="spinner">Lade Bilder aus DDB und Europeana …</div>`;
-  const [ddb, eur] = await Promise.allSettled([fetchDdbImages(place, pg*ROWS), fetchEuropeana(place, pg*ROWS)]);
+  const [ddb, eur] = await Promise.allSettled([fetchDdbImages(place, pg*CONFIG.rows), fetchEuropeana(place, pg*CONFIG.rows)]);
+  if(state.tab!=="images" || state.place!==place) return;
   let cards = [], errs = "";
   if(ddb.status==="fulfilled"){
     ddb.value.response.docs.forEach(d=>cards.push({key:(first(d.title)||"")+ddbYear(d.begin_time), html:ddbImageCard(d)}));
-  } else errs += errBox(ddb.reason, "DDB");
+  } else errs += errBox(ddb.reason, "Deutsche Digitale Bibliothek");
   if(eur.status==="fulfilled" && eur.value.success!==false){
     (eur.value.items||[]).forEach(it=>cards.push({key:(first(it.title)||"")+(first(it.year)||"")+first(it.edmPreview), html:eurCard(it)}));
-  } else errs += errBox(eur.reason || new Error(eur.value?.error||"Europeana-Fehler"), "Europeana");
+  } else errs += errBox(eur.reason || new Error("Europeana hat die Anfrage abgelehnt."), "Europeana");
   const before = cards.length; cards = dedupe(cards);
   const html = cards.map(c=>c.html).join("");
   if(!more){
     const nD = ddb.status==="fulfilled"? ddb.value.response.numFound : null;
     const nE = eur.status==="fulfilled"? eur.value.totalResults : null;
-    const places = ddb.status==="fulfilled" ? (ddb.value.facet_counts?.facet_fields?.place_fct||[]) : [];
-    let pf = []; for(let i=0;i<places.length;i+=2) pf.push(`${esc(places[i])} (${num(places[i+1])})`);
-    const free = $("#freeOnly").checked ? "frei nutzbare " : "";
+    const free = state.freeOnly ? "frei nutzbare " : "";
     v.innerHTML = errs + `<div class="stats">
         ${nD!==null?`<div class="stat"><b>${num(nD)}</b>${free}Bilder in der DDB</div>`:""}
-        ${nE!==null?`<div class="stat"><b>${num(nE)}</b>${free}Objekte bei Europeana</div>`:""}
+        ${nE!=null?`<div class="stat"><b>${num(nE)}</b>${free}Objekte bei Europeana</div>`:""}
         ${before!==cards.length?`<div class="stat"><b>${before-cards.length}</b>Dubletten ausgeblendet</div>`:""}
       </div>
-      ${pf.length?`<div class="meta" style="margin-bottom:10px">Ortsfeld der DDB-Treffer: ${pf.join(" · ")}</div>`:""}
       ${cards.length?`<div class="grid" id="ilist">${html}</div><button class="more" id="imore">Mehr laden</button>`
-        :`<div class="note">Keine ${free}Bilder gefunden. Tipp: „nur frei nutzbar“ abschalten, um zu sehen, was mit Lizenzklärung möglich wäre.</div>`}`;
+        :`<div class="note">Keine ${free}Bilder gefunden.${state.freeOnly?" Schalte „nur frei nutzbare Bilder“ ab, um auch geschützte Bilder zu sehen.":""}</div>`}`;
   } else { $("#ilist").insertAdjacentHTML("beforeend", html); }
   const mb = $("#imore"); if(mb) mb.onclick=()=>renderImages(true);
 }
 
-function errBox(e, src){ return `<div class="err"><b>${src? esc(src)+": ":""}Fehler.</b> ${esc(e?.message||e)}<br>
-  Hinweis: Öffne die Datei in einem normalen Browser (Chrome, Firefox, Safari). Wenn eine API Browser-Anfragen per CORS blockiert, braucht der Prototyp einen kleinen Proxy.</div>`; }
+function renderFavs(){
+  const list = Object.entries(favs).sort((a,b)=>b[1].ts-a[1].ts);
+  list.forEach(([k,f])=>{ state.items[k]=f.item; state.cards[k]=f.html; });
+  const papers = list.filter(([k])=>k.startsWith("zp:")), imgs = list.filter(([k])=>!k.startsWith("zp:"));
+  $("#view").innerHTML = list.length
+    ? `${papers.length?`<div class="list">${papers.map(([,f])=>f.html).join("")}</div>`:""}
+       ${imgs.length?`<div class="grid" style="margin-top:12px">${imgs.map(([,f])=>f.html).join("")}</div>`:""}`
+    : `<div class="note">Noch nichts gemerkt. Tippe bei einem Fundstück auf ☆, dann landet es hier – gespeichert nur auf diesem Gerät.</div>`;
+  updateFavUI();
+}
 
-function render(){ ({today:renderToday, papers:renderPapers, images:renderImages})[state.tab](); }
+function errBox(e, src){ return `<div class="err"><b>${src? esc(src)+": ":""}</b>${esc(e?.message||e)}</div>`; }
+
+function render(){
+  renderOpts();
+  ({today:renderToday, papers:()=>renderPapers(), images:()=>renderImages(), favs:renderFavs})[state.tab]();
+  updateFavUI();
+}
+
+/* ---------- Viewer mit Zoom ---------- */
+const viewer = $("#viewer"), vstage = $("#vstage"), vimg = $("#vimg");
+function openViewer(key){
+  const it = state.items[key]; if(!it || !it.srcs.length) return;
+  vstage.classList.remove("zoomed");
+  vimg.alt = it.title || "";
+  vimg.dataset.fallbacks = it.srcs.slice(1).join("|");
+  vimg.onerror = () => nextImg(vimg);
+  vimg.src = it.srcs[0];
+  $("#vinfo").innerHTML = it.info || "";
+  viewer.hidden = false; document.body.style.overflow = "hidden";
+  history.pushState({viewer:true}, "");
+  $("#vclose").focus();
+}
+function closeViewer(fromPop){
+  if(viewer.hidden) return;
+  viewer.hidden = true; document.body.style.overflow = ""; vimg.removeAttribute("src");
+  if(!fromPop && history.state && history.state.viewer) history.back();
+}
+vimg.addEventListener("click", e=>{
+  const r = vimg.getBoundingClientRect();
+  const fx = (e.clientX - r.left)/r.width, fy = (e.clientY - r.top)/r.height;
+  const zoom = !vstage.classList.contains("zoomed");
+  vstage.classList.toggle("zoomed", zoom);
+  if(zoom) requestAnimationFrame(()=>{
+    vstage.scrollLeft = fx*vimg.offsetWidth - vstage.clientWidth/2;
+    vstage.scrollTop = fy*vimg.offsetHeight - vstage.clientHeight/2;
+  });
+});
+$("#vclose").onclick = ()=>closeViewer(false);
+window.addEventListener("popstate", ()=>closeViewer(true));
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeViewer(false); });
 
 /* ---------- Events ---------- */
-$("#chips").innerHTML = PRESETS.map(p=>`<button class="chip" type="button">${p}</button>`).join("");
+$("#chips").innerHTML = CONFIG.presets.map(p=>`<button class="chip" type="button">${esc(p)}</button>`).join("");
 $("#chips").addEventListener("click", e=>{ if(e.target.matches(".chip")){ $("#place").value=e.target.textContent; go(); }});
-$("#form").addEventListener("submit", e=>{ e.preventDefault(); go(); });
+$("#form").addEventListener("submit", e=>{ e.preventDefault(); $("#place").blur(); go(); });
 $("#tabs").addEventListener("click", e=>{
   const b = e.target.closest(".tab"); if(!b) return;
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t===b));
   state.tab = b.dataset.tab; render();
 });
-["#freeOnly","#sort"].forEach(s=>$(s).addEventListener("change", render));
 document.addEventListener("click", async e=>{
-  const b = e.target.closest("[data-copy]"); if(!b) return;
-  try{ await navigator.clipboard.writeText(b.dataset.copy); b.textContent="kopiert ✓"; }catch{ b.textContent="Kopieren nicht möglich"; }
+  const c = e.target.closest("[data-copy]");
+  if(c){ try{ await navigator.clipboard.writeText(c.dataset.copy); c.textContent="kopiert ✓"; }catch{ c.textContent="Kopieren nicht möglich"; } return; }
+  const f = e.target.closest("[data-fav]"); if(f){ toggleFav(f.dataset.fav); return; }
+  const o = e.target.closest("[data-open]"); if(o){ openViewer(o.dataset.open); }
 });
 function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; render(); }
+
+/* ---------- PWA ---------- */
+if(DEBUG) $("#debug").hidden = false;
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); deferredPrompt = e; $("#installBtn").hidden = false; });
+$("#installBtn").onclick = async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $("#installBtn").hidden = true; };
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+if(/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone) $("#iosHint").hidden = false;
+if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")){
+  navigator.serviceWorker.register("sw.js").catch(err=>log("SW-Fehler: "+err));
+}
+
 go();
 </script>
 </body>
