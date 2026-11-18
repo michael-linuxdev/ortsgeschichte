@@ -156,7 +156,8 @@ const DEBUG = new URLSearchParams(location.search).has("debug");
 const HL_PRE = "⟦", HL_POST = "⟧";
 
 const $ = s => document.querySelector(s);
-const state = { tab:"today", place:"Wittichenau", pages:{}, noHL:false, freeOnly:true, sort:"score desc", items:{}, cards:{} };
+const state = { tab:"today", place:"Wittichenau", pages:{}, noHL:false, freeOnly:true, sort:"score desc", imgSort:"rel", period:"all", seed:newSeed(), items:{}, cards:{} };
+function newSeed(){ return Math.floor(Math.random()*1e6); }
 const cache = new Map();
 
 /* ---------- Helpers ---------- */
@@ -313,6 +314,21 @@ function paperCard(d, term, hl){
 }
 
 /* ---------- Bilder ---------- */
+const PERIODS = { all:null, pre1900:[null,1899], "1900-1945":[1900,1945], post1945:[1946,null] };
+const dayOf = y => Math.floor(y*365.2425);   /* DDB begin_time = Tage seit Jahr 0 */
+function ddbPeriodFq(){
+  const r = PERIODS[state.period]; if(!r) return null;
+  return `begin_time:[${r[0]!=null?dayOf(r[0]):"*"} TO ${r[1]!=null?dayOf(r[1]+1)-1:"*"}]`;
+}
+function eurPeriodQf(){
+  const r = PERIODS[state.period]; if(!r) return null;
+  return `YEAR:[${r[0]??"*"} TO ${r[1]??"*"}]`;
+}
+/* Pseudozufall mit Seed – stabil beim Weiterblättern */
+function seeded(seed){ let x = seed % 2147483647 || 1; return () => (x = x*16807 % 2147483647) / 2147483647; }
+function shuffle(arr, seed){ const r = seeded(seed); for(let i=arr.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function interleave(a, b){ const out=[]; for(let i=0;i<Math.max(a.length,b.length);i++){ if(a[i]) out.push(a[i]); if(b[i]) out.push(b[i]); } return out; }
+
 async function fetchDdbImages(place, start){
   const p = new URLSearchParams({
     q: solrPhrase(place), rows: CONFIG.rows, start,
@@ -322,6 +338,16 @@ async function fetchDdbImages(place, start){
   p.append("fq","digitalisat:true");
   p.append("fq","type:mediatype_002");
   if(state.freeOnly) p.append("fq","license_group:rights_001");
+  const pf = ddbPeriodFq(); if(pf) p.append("fq", pf);
+  if(state.imgSort==="old") p.set("sort","begin_time asc");
+  if(state.imgSort==="new") p.set("sort","begin_time desc");
+  if(state.imgSort==="random"){
+    /* DDB kennt keine Zufallssortierung: zufälligen Startpunkt im Treffer-Set wählen */
+    const c = new URLSearchParams(p); c.set("rows","0"); c.delete("facet"); c.delete("facet.field"); c.delete("facet.limit");
+    const n = (await getJSON(`${DDB}/search/select?${c}`)).response.numFound;
+    const span = Math.max(1, n - CONFIG.rows);
+    p.set("start", String((Math.floor(seeded(state.seed)()*span) + start) % Math.max(1,n)));
+  }
   return getJSON(`${DDB}/search/select?${p}`);
 }
 function ddbImageCard(d){
@@ -347,6 +373,10 @@ async function fetchEuropeana(place, start){
     thumbnail: "true", media: "true", profile: "standard"
   });
   if(state.freeOnly) p.set("reusability","open");
+  const qf = eurPeriodQf(); if(qf) p.append("qf", qf);
+  if(state.imgSort==="random") p.set("sort", `random_${state.seed} asc`);
+  if(state.imgSort==="quality") p.set("sort", "COMPLETENESS desc");
+  /* "älteste/neueste": Europeana kann nicht nach Jahr sortieren – wird pro Seite im Browser einsortiert */
   return getJSON(`${EUR}?${p}`);
 }
 function eurCard(it){
@@ -372,10 +402,19 @@ function renderOpts(){
   const o = $("#opts");
   if(state.tab==="papers") o.innerHTML = `<label>Sortierung <select id="sort">
       <option value="score desc">Relevanz</option><option value="publication_date asc">älteste zuerst</option><option value="publication_date desc">neueste zuerst</option></select></label>`;
-  else if(state.tab==="images") o.innerHTML = `<label><input type="checkbox" id="freeOnly"${state.freeOnly?" checked":""}> nur frei nutzbare Bilder</label>`;
+  else if(state.tab==="images") o.innerHTML = `<label>Sortierung <select id="imgSort">
+      <option value="rel">Relevanz</option><option value="old">älteste zuerst</option><option value="new">neueste zuerst</option>
+      <option value="random">Zufall – überrasch mich</option><option value="quality">beste Qualität</option></select></label>
+    ${state.imgSort==="random"?'<button type="button" class="btn-ghost" id="reshuffle">Neu mischen</button>':""}
+    <label>Zeitraum <select id="period">
+      <option value="all">alle</option><option value="pre1900">vor 1900</option><option value="1900-1945">1900–1945</option><option value="post1945">nach 1945</option></select></label>
+    <label><input type="checkbox" id="freeOnly"${state.freeOnly?" checked":""}> nur frei nutzbar</label>`;
   else o.innerHTML = "";
   const s=$("#sort"); if(s){ s.value=state.sort; s.onchange=()=>{ state.sort=s.value; render(); }; }
   const f=$("#freeOnly"); if(f) f.onchange=()=>{ state.freeOnly=f.checked; render(); };
+  const is=$("#imgSort"); if(is){ is.value=state.imgSort; is.onchange=()=>{ state.imgSort=is.value; if(is.value==="random") state.seed=newSeed(); render(); }; }
+  const pe=$("#period"); if(pe){ pe.value=state.period; pe.onchange=()=>{ state.period=pe.value; render(); }; }
+  const rs=$("#reshuffle"); if(rs) rs.onclick=()=>{ state.seed=newSeed(); render(); };
 }
 
 async function renderToday(){
@@ -429,12 +468,12 @@ async function renderImages(more=false){
   if(state.tab!=="images" || state.place!==place) return;
   let cards = [], errs = "";
   if(ddb.status==="fulfilled"){
-    ddb.value.response.docs.forEach(d=>cards.push({key:(first(d.title)||"")+ddbYear(d.begin_time), html:ddbImageCard(d)}));
+    ddb.value.response.docs.forEach(d=>cards.push({src:"ddb", year:ddbYear(d.begin_time), key:(first(d.title)||"")+ddbYear(d.begin_time), html:ddbImageCard(d)}));
   } else errs += errBox(ddb.reason, "Deutsche Digitale Bibliothek");
   if(eur.status==="fulfilled" && eur.value.success!==false){
-    (eur.value.items||[]).forEach(it=>cards.push({key:(first(it.title)||"")+(first(it.year)||"")+first(it.edmPreview), html:eurCard(it)}));
+    (eur.value.items||[]).forEach(it=>{ const y=parseInt(first(it.year),10); cards.push({src:"eur", year:isNaN(y)?null:y, key:(first(it.title)||"")+(first(it.year)||"")+first(it.edmPreview), html:eurCard(it)}); });
   } else errs += errBox(eur.reason || new Error("Europeana hat die Anfrage abgelehnt."), "Europeana");
-  const before = cards.length; cards = dedupe(cards);
+  const before = cards.length; cards = arrange(dedupe(cards));
   const html = cards.map(c=>c.html).join("");
   if(!more){
     const nD = ddb.status==="fulfilled"? ddb.value.response.numFound : null;
@@ -445,10 +484,21 @@ async function renderImages(more=false){
         ${nE!=null?`<div class="stat"><b>${num(nE)}</b>${free}Objekte bei Europeana</div>`:""}
         ${before!==cards.length?`<div class="stat"><b>${before-cards.length}</b>Dubletten ausgeblendet</div>`:""}
       </div>
+      ${(state.imgSort==="old"||state.imgSort==="new")?'<div class="meta" style="margin-bottom:10px">Sortiert nach Datierung. Europeana-Treffer werden pro Seite einsortiert; Objekte ohne Jahresangabe stehen am Ende.</div>':""}
       ${cards.length?`<div class="grid" id="ilist">${html}</div><button class="more" id="imore">Mehr laden</button>`
         :`<div class="note">Keine ${free}Bilder gefunden.${state.freeOnly?" Schalte „nur frei nutzbare Bilder“ ab, um auch geschützte Bilder zu sehen.":""}</div>`}`;
   } else { $("#ilist").insertAdjacentHTML("beforeend", html); }
   const mb = $("#imore"); if(mb) mb.onclick=()=>renderImages(true);
+}
+
+/* Reihenfolge einer Seite: Jahr-Sortierung über beide Quellen, sonst DDB/Europeana abwechselnd */
+function arrange(cards){
+  if(state.imgSort==="old"||state.imgSort==="new"){
+    const dir = state.imgSort==="old" ? 1 : -1;
+    return cards.slice().sort((a,b)=> (a.year==null) - (b.year==null) || dir*((a.year||0)-(b.year||0)));
+  }
+  const mixed = interleave(cards.filter(c=>c.src==="ddb"), cards.filter(c=>c.src==="eur"));
+  return state.imgSort==="random" ? shuffle(mixed, state.seed + (state.pages.images||0)) : mixed;
 }
 
 function renderFavs(){
@@ -518,7 +568,7 @@ document.addEventListener("click", async e=>{
   const f = e.target.closest("[data-fav]"); if(f){ toggleFav(f.dataset.fav); return; }
   const o = e.target.closest("[data-open]"); if(o){ openViewer(o.dataset.open); }
 });
-function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; render(); }
+function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; state.seed=newSeed(); render(); }
 
 /* ---------- PWA ---------- */
 if(DEBUG) $("#debug").hidden = false;
