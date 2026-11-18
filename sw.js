@@ -1,6 +1,6 @@
 /* Service Worker: hält nur die App-Hülle offline bereit.
    API-Antworten und Bilder der Archive werden bewusst NICHT gecacht. */
-const VERSION = "og-v5";
+const VERSION = "og-v6";
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "assets/fonts/fraunces-600.woff2", "assets/fonts/inter-400.woff", "assets/fonts/inter-600.woff",
