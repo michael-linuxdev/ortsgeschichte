@@ -32,6 +32,8 @@
   main{max-width:1100px;margin:0 auto;padding:0 16px 60px}
   .search{display:flex;gap:8px;margin:14px 0 8px}
   .search input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  /* iOS: Link-Vorschau beim Gedrückthalten aus */
+  a,button,img{-webkit-touch-callout:none}
   button{font:inherit;cursor:pointer;color:inherit}
   .btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 16px;font-weight:600}
   .btn-ghost{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.82rem;white-space:nowrap}
@@ -287,8 +289,6 @@ function nsNote(iso){
 
 function paperCard(d, term, hl){
   const key = "zp:" + d.id;
-  const itemId = String(d.id||"").split("-FILE_")[0];
-  const link = `https://www.deutsche-digitale-bibliothek.de/newspaper/item/${itemId}`;
   const portalSearch = `https://www.deutsche-digitale-bibliothek.de/search/newspaper?query=${encodeURIComponent(term)}`;
   const title = first(d.paper_title) || "Zeitung";
   const thumbs = [d.preview_reference, ...ddbThumbs(d.thumbnail)].filter(Boolean);
@@ -296,7 +296,7 @@ function paperCard(d, term, hl){
   const frag = hl && hl[d.id] && first(hl[d.id].plainpagefulltext);
   const snip = frag ? hlSnippet(frag) : (d.plainpagefulltext ? textSnippet(d.plainpagefulltext, term) : "");
   const meta = `${fmtDate(d.publication_date)} · Seite ${d.pagenumber??"?"} · ${(d.place_of_distribution||[]).join(", ")}`;
-  const attr = attribution(title+", "+fmtDate(d.publication_date), first(d.provider), "Zeitungsportal", "Deutsche Digitale Bibliothek", link);
+  const attr = attribution(title+", "+fmtDate(d.publication_date), first(d.provider), "Zeitungsportal", "Deutsche Digitale Bibliothek", portalSearch);
   const item = { srcs: large.length? large : thumbs, title: title+", "+fmtDate(d.publication_date), info: `<div class="t">${esc(title)}</div><div class="meta">${esc(meta)}</div>${attr}` };
   const html = `<div class="card">${favBtn(key)}<div class="paper">
     <button class="thumb" data-open="${esc(key)}" aria-label="Seite ansehen">${imgEl(thumbs,"Zeitungsseite")}</button>
@@ -306,7 +306,7 @@ function paperCard(d, term, hl){
       ${nsNote(d.publication_date)}
       <div class="snip${snip?"":" empty"}">${snip || "Kein Textausschnitt verfügbar – Seite ansehen."}</div>
       <div class="row"><span class="badge b-src">DDB Zeitungsportal</span><span class="badge b-ok">i. d. R. gemeinfrei – prüfen</span></div>
-      <div class="links"><button type="button" data-open="${esc(key)}">Seite ansehen</button><a href="${esc(link)}" target="_blank" rel="noopener">Ausgabe im Portal</a><a href="${esc(portalSearch)}" target="_blank" rel="noopener">Portalsuche</a></div>
+      <div class="links"><button type="button" data-open="${esc(key)}">Seite ansehen</button><a href="${esc(portalSearch)}" target="_blank" rel="noopener">Portalsuche</a></div>
       ${attr}
     </div></div></div>`;
   return register(key, item, html);
