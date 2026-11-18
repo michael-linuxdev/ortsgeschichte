@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ortsgeschichte – Die Geschichte deines Ortes</title>
+<meta name="description" content="Alte Zeitungen, Fotos und Karten zu deinem Ort – aus der Deutschen Digitalen Bibliothek und Europeana.">
+<meta name="theme-color" content="#f6f3ee">
+<link rel="preload" href="assets/fonts/fraunces-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238a3b12'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' font-weight='700' text-anchor='middle' fill='%23f6f3ee'%3EO%3C/text%3E%3C/svg%3E">
+<style>
+  @font-face{font-family:"Fraunces";src:url(assets/fonts/fraunces-600.woff2) format("woff2");font-weight:600;font-display:swap}
+  @font-face{font-family:"Inter";src:url(assets/fonts/inter-400.woff) format("woff");font-weight:400;font-display:swap}
+  @font-face{font-family:"Inter";src:url(assets/fonts/inter-600.woff) format("woff");font-weight:600;font-display:swap}
+  @font-face{font-family:"Pagella";src:url(assets/fonts/pagella-400.woff) format("woff");font-weight:400;font-display:swap}
+  @font-face{font-family:"Pagella";src:url(assets/fonts/pagella-400i.woff) format("woff");font-weight:400;font-style:italic;font-display:swap}
+  :root{
+    --bg:#f6f3ee; --card:#fff; --ink:#1f1d1a; --muted:#6f685e; --line:#e4ddd2;
+    --accent:#8a3b12; --accent-soft:#f3e3d6; --ok:#2f6b3a; --ok-soft:#e1efe3;
+    --warn:#8a6a12; --warn-soft:#f5ecd2; --bad:#8a1f1f; --bad-soft:#f5dddd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-feature-settings:"cv11","ss01";background:var(--bg);color:var(--ink);line-height:1.45}
+  header{padding:20px 16px 8px;max-width:1100px;margin:0 auto}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:2rem;letter-spacing:-.01em;margin:0}
+  .sub{color:var(--muted);font-size:.9rem;margin-top:2px}
+  main{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+  .search{display:flex;gap:8px;margin:14px 0 8px}
+  .search input{flex:1;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  button{font:inherit;cursor:pointer}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 16px;font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:.88rem}
+  .chip:hover{border-color:var(--accent)}
+  .opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.88rem;color:var(--muted);margin-bottom:12px}
+  .opts input[type=text]{width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px}
+  .opts select{padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+  .tab{background:none;border:0;padding:10px 12px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+  .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.85rem}
+  .stat b{font-family:"Fraunces",Georgia,serif;font-size:1.25rem;display:block}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .card .img{background:#eee8de;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem}
+  .card .img img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .body{padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .paper{display:flex;gap:12px;padding:12px}
+  .paper .thumb{width:72px;flex:0 0 72px;height:96px;background:#eee8de;border-radius:6px;overflow:hidden}
+  .paper .thumb img{width:100%;height:100%;object-fit:cover}
+  .t{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.02rem;line-height:1.25}
+  .meta{color:var(--muted);font-size:.8rem}
+  .snip{font-family:"Pagella","Palatino Linotype",Palatino,Georgia,serif;font-size:1rem;line-height:1.5;background:#faf7f2;border-left:3px solid var(--accent-soft);padding:6px 10px;border-radius:4px}
+  mark{background:#ffe08a;padding:0 2px;border-radius:2px}
+  .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px}
+  .b-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-bad{background:var(--bad-soft);color:var(--bad)}
+  .b-src{background:#eceae6;color:#444}
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .attr{font-size:.75rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:auto}
+  .attr button{border:0;background:none;color:var(--accent);padding:0;font-size:.75rem;text-decoration:underline}
+  a{color:var(--accent)}
+  .note{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.9rem;color:var(--muted)}
+  .err{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:12px;font-size:.88rem;margin-bottom:10px}
+  .more{margin:14px auto 0;display:block;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 18px}
+  details.debug{margin-top:28px;font-size:.8rem;color:var(--muted)}
+  details.debug pre{white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:300px;overflow:auto}
+  .spinner{color:var(--muted);font-size:.9rem;padding:12px 0}
+  .foot{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted);line-height:1.6}
+  h2{font-family:"Fraunces",Georgia,serif;font-size:1.15rem;margin:18px 0 8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ortsgeschichte</h1>
+  <div class="sub">Die Geschichte deines Ortes – aus alten Zeitungen, Fotos und Karten</div>
+</header>
+<main>
+  <form class="search" id="form">
+    <input id="place" placeholder="Ort eingeben, z. B. Wittichenau" value="Wittichenau" autocomplete="off">
+    <button class="btn" type="submit">Suchen</button>
+  </form>
+  <div class="chips" id="chips"></div>
+  <div class="opts">
+    <label><input type="checkbox" id="freeOnly" checked> nur frei nutzbar</label>
+    <label>Sortierung Zeitungen
+      <select id="sort">
+        <option value="score desc">Relevanz</option>
+        <option value="publication_date asc">älteste zuerst</option>
+        <option value="publication_date desc">neueste zuerst</option>
+      </select>
+    </label>
+    <label>Europeana-Key <input type="text" id="ekey" value="api2demo"></label>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="today">Heute vor 100 Jahren</button>
+    <button class="tab" data-tab="papers">Zeitungen</button>
+    <button class="tab" data-tab="images">Bilder</button>
+  </nav>
+
+  <section id="view"></section>
+
+  <details class="debug">
+    <summary>Debug: API-Aufrufe</summary>
+    <pre id="log"></pre>
+  </details>
+  <footer class="foot">
+    Daten: <a href="https://www.deutsche-digitale-bibliothek.de" target="_blank" rel="noopener">Deutsche Digitale Bibliothek</a> und <a href="https://www.europeana.eu" target="_blank" rel="noopener">Europeana</a>. Rechte an den Inhalten liegen bei den jeweiligen Einrichtungen; Lizenz steht an jedem Treffer.<br>
+    Deine Suche wird direkt aus deinem Browser an diese beiden Dienste gesendet. Diese Seite speichert nichts und setzt keine Cookies.<br>
+    Prototyp · <a href="https://micana.de" target="_blank" rel="noopener">micana.de</a>
+  </footer>
+</main>
+
+<script>
+const DDB = "https://api.deutsche-digitale-bibliothek.de/2/search/index";
+const EUR = "https://api.europeana.eu/record/v2/search.json";
+const PRESETS = ["Wittichenau","Maukendorf","Pirna","Dresden"];
+const ROWS = 12;
+
+const $ = s => document.querySelector(s);
+const state = { tab:"today", place:"Wittichenau", pages:{} };
+
+/* ---------- Helpers ---------- */
+function log(msg){ const el=$("#log"); el.textContent = new Date().toLocaleTimeString()+"  "+msg+"\n"+el.textContent; }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function first(v){ return Array.isArray(v) ? v[0] : v; }
+function solrPhrase(s){ return '"' + s.replace(/["\\]/g,"") + '"'; }
+function fmtDate(iso){ if(!iso) return ""; const d=new Date(iso); return isNaN(d)? iso : d.toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"}); }
+function num(n){ return Number(n||0).toLocaleString("de-DE"); }
+
+async function getJSON(url){
+  log("GET "+url);
+  let r;
+  try { r = await fetch(url); }
+  catch(e){ throw new Error("Netzwerk/CORS-Fehler – die API lässt sich von hier aus nicht abrufen. (" + e.message + ")"); }
+  if(!r.ok) throw new Error("HTTP " + r.status + " bei " + url.split("?")[0]);
+  return r.json();
+}
+
+/* Rechte-URL -> Label + Ampel */
+function rightsInfo(url, group){
+  const u = (url||"").toLowerCase();
+  if(u.includes("publicdomain/mark")) return {label:"Gemeinfrei (PDM)", cls:"b-ok", attrib:false};
+  if(u.includes("publicdomain/zero")) return {label:"CC0", cls:"b-ok", attrib:false};
+  if(u.includes("/nc")||u.includes("-nc")) return {label:"CC "+ccParts(u)+" (nicht kommerziell)", cls:"b-warn", attrib:true};
+  if(u.includes("creativecommons.org/licenses")) return {label:"CC "+ccParts(u), cls:"b-ok", attrib:true};
+  if(u.includes("rightsstatements.org/vocab/inc")) return {label:"Urheberrechtlich geschützt", cls:"b-bad", attrib:true};
+  if(u.includes("rightsstatements.org/vocab/noc")) return {label:"Kein Urheberrecht (mit Auflagen)", cls:"b-warn", attrib:true};
+  if(u.includes("rightsstatements.org")) return {label:"Rechte unklar", cls:"b-warn", attrib:true};
+  if(group==="rights_001") return {label:"frei (rights_001)", cls:"b-ok", attrib:true};
+  if(group==="rights_002") return {label:"eingeschränkt (rights_002)", cls:"b-warn", attrib:true};
+  if(group==="rights_003") return {label:"geschützt (rights_003)", cls:"b-bad", attrib:true};
+  return {label:"Lizenz unbekannt", cls:"b-warn", attrib:true};
+}
+function ccParts(u){ const m=u.match(/licenses\/([a-z-]+)\//); return m? m[1].toUpperCase() : ""; }
+
+/* OCR-Snippet um den Suchbegriff */
+function snippet(text, term, len=170){
+  if(!text) return "";
+  const t = String(Array.isArray(text)? text.join(" ") : text).replace(/ſ/g,"s").replace(/\s+/g," ");
+  const i = t.toLowerCase().indexOf(term.toLowerCase());
+  if(i<0) return esc(t.slice(0,len*2))+"…";
+  const s = Math.max(0,i-len), e = Math.min(t.length,i+term.length+len);
+  return (s>0?"…":"") + esc(t.slice(s,i)) + "<mark>"+esc(t.slice(i,i+term.length))+"</mark>" + esc(t.slice(i+term.length,e)) + (e<t.length?"…":"");
+}
+
+/* DDB: Tage seit Jahr 0 -> Jahr (Annäherung) */
+function ddbYear(days){ const d=first(days); return d? Math.floor(d/365.2425) : null; }
+
+/* Bild mit Fallback-Kette */
+function imgTag(urls, alt){
+  const list = urls.filter(Boolean);
+  if(!list.length) return '<div class="img">kein Vorschaubild</div>';
+  return `<div class="img"><img loading="lazy" alt="${esc(alt)}" src="${esc(list[0])}" data-fallbacks="${esc(list.slice(1).join("|"))}" onerror="nextImg(this)"></div>`;
+}
+function nextImg(img){
+  const rest = (img.dataset.fallbacks||"").split("|").filter(Boolean);
+  if(rest.length){ img.dataset.fallbacks = rest.slice(1).join("|"); img.src = rest[0]; }
+  else { img.parentElement.textContent = "Bild nicht ladbar"; }
+}
+function ddbBinary(uuid){
+  if(!uuid) return [];
+  return [
+    `https://api.deutsche-digitale-bibliothek.de/binary/${uuid}`,
+    `https://www.deutsche-digitale-bibliothek.de/binary/${uuid}/list/1.jpg`,
+    `https://iiif.deutsche-digitale-bibliothek.de/image/2/${uuid}/full/!400,400/0/default.jpg`
+  ];
+}
+
+function attribution(title, inst, rightsLabel, via, link){
+  const txt = `„${title}“ · ${inst||"unbekannte Einrichtung"} · ${rightsLabel} · via ${via}`;
+  return `<div class="attr">${esc(txt)} · <a href="${esc(link)}" target="_blank" rel="noopener">Original</a>
+    · <button type="button" data-copy="${esc(txt+" · "+link)}">Quelle kopieren</button></div>`;
+}
+
+/* ---------- Zeitungen (DDB newspaper-issues) ---------- */
+async function fetchPapers(place, start, extraFq){
+  const p = new URLSearchParams({
+    q: "plainpagefulltext:" + solrPhrase(place),
+    rows: ROWS, start,
+    sort: $("#sort").value,
+    fl: "id,paper_title,publication_date,pagenumber,thumbnail,preview_reference,place_of_distribution,provider,plainpagefulltext"
+  });
+  if(extraFq) p.append("fq", extraFq);
+  return getJSON(`${DDB}/newspaper-issues/select?${p}`);
+}
+function paperCard(d, term){
+  const itemId = String(d.id||"").split("-FILE_")[0];
+  const link = `https://www.deutsche-digitale-bibliothek.de/newspaper/item/${itemId}`;
+  const thumbs = [d.preview_reference, ...ddbBinary(d.thumbnail)].filter(Boolean);
+  const title = first(d.paper_title) || "Zeitung";
+  const pageImg = thumbs[0];
+  const portalSearch = `https://www.deutsche-digitale-bibliothek.de/search/newspaper?query=${encodeURIComponent(term)}`;
+  return `<div class="card"><div class="paper">
+    <div class="thumb">${thumbs.length? `<img loading="lazy" src="${esc(thumbs[0])}" data-fallbacks="${esc(thumbs.slice(1).join("|"))}" onerror="nextImg(this)" alt="">`:""}</div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div class="t">${esc(title)}</div>
+      <div class="meta">${esc(fmtDate(d.publication_date))} · Seite ${esc(d.pagenumber??"?")} · ${esc((d.place_of_distribution||[]).join(", "))}</div>
+      <div class="snip">${snippet(d.plainpagefulltext, term)}</div>
+      <div class="row"><span class="badge b-src">DDB Zeitungsportal</span><span class="badge b-ok">i. d. R. gemeinfrei – prüfen</span></div>
+      <div class="meta">${pageImg?`<a href="${esc(pageImg)}" target="_blank" rel="noopener">Seitenbild öffnen</a> · `:""}<a href="${esc(link)}" target="_blank" rel="noopener">Ausgabe im Portal</a> · <a href="${esc(portalSearch)}" target="_blank" rel="noopener">Portalsuche</a></div>
+      ${attribution(title+", "+fmtDate(d.publication_date), first(d.provider), "Zeitungsportal", "Deutsche Digitale Bibliothek", link)}
+    </div></div></div>`;
+}
+
+/* ---------- Bilder (DDB + Europeana) ---------- */
+async function fetchDdbImages(place, start){
+  const p = new URLSearchParams({
+    q: solrPhrase(place), rows: ROWS, start,
+    fl: "id,title,label,preview_store,license,license_group,provider,dataprovider_fct,place,begin_time",
+    facet: "true", "facet.field": "place_fct", "facet.limit": "8"
+  });
+  p.append("fq","digitalisat:true");
+  p.append("fq","type:mediatype_002");
+  if($("#freeOnly").checked) p.append("fq","license_group:rights_001");
+  return getJSON(`${DDB}/search/select?${p}`);
+}
+function ddbImageCard(d){
+  const title = first(d.title) || first(d.label) || "Ohne Titel";
+  const m = String(d.preview_store||"").match(/thumbnail href=\\?"([^"\\]+)/);
+  const r = rightsInfo(first(d.license), first(d.license_group));
+  const inst = first(d.dataprovider_fct) || first(d.provider);
+  const year = ddbYear(d.begin_time);
+  const link = `https://www.deutsche-digitale-bibliothek.de/item/${d.id}`;
+  return `<div class="card">${imgTag(ddbBinary(m&&m[1]), title)}
+    <div class="body"><div class="t">${esc(title)}</div>
+    <div class="meta">${year? "ca. "+year+" · ":""}${esc((d.place||[]).join(", "))}</div>
+    <div class="row"><span class="badge b-src">DDB</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>
+    ${attribution(title, inst, r.label, "Deutsche Digitale Bibliothek", link)}</div></div>`;
+}
+async function fetchEuropeana(place, start){
+  const p = new URLSearchParams({
+    wskey: $("#ekey").value.trim() || "api2demo",
+    query: solrPhrase(place), rows: ROWS, start: start+1,
+    thumbnail: "true", media: "true", profile: "standard"
+  });
+  if($("#freeOnly").checked) p.set("reusability","open");
+  return getJSON(`${EUR}?${p}`);
+}
+function eurCard(it){
+  const title = first(it.title) || "Ohne Titel";
+  const r = rightsInfo(first(it.rights));
+  const geo = it.edmPlaceLatitude ? " · 📍 Koordinaten" : "";
+  return `<div class="card">${imgTag([first(it.edmPreview)], title)}
+    <div class="body"><div class="t">${esc(title)}</div>
+    <div class="meta">${esc(first(it.year)||"")}${geo}</div>
+    <div class="row"><span class="badge b-src">Europeana</span><span class="badge ${r.cls}">${esc(r.label)}</span></div>
+    ${attribution(title, first(it.dataProvider), r.label, "Europeana", it.guid || "https://www.europeana.eu")}</div></div>`;
+}
+/* Dubletten raus (gleicher Titel + gleiches Jahr/Bild) */
+function dedupe(cards){
+  const seen = new Set();
+  return cards.filter(c => { const k=c.key.toLowerCase().replace(/[^a-z0-9äöüß]/g,""); if(seen.has(k)) return false; seen.add(k); return true; });
+}
+
+/* ---------- Views ---------- */
+async function renderToday(){
+  const place = state.place;
+  const now = new Date(); const y = now.getFullYear()-100;
+  const mm = String(now.getMonth()+1).padStart(2,"0"), dd = String(now.getDate()).padStart(2,"0");
+  const day = `${y}-${mm}-${dd}`;
+  const v = $("#view");
+  v.innerHTML = `<div class="spinner">Suche Zeitungen vom ${fmtDate(day)} …</div>`;
+  try{
+    let res = await fetchPapers(place, 0, `publication_date:[${day}T00:00:00Z TO ${day}T23:59:59Z]`);
+    let label = `am ${fmtDate(day)}`;
+    if(!res.response.numFound){
+      const a = new Date(day); a.setDate(a.getDate()-3); const b = new Date(day); b.setDate(b.getDate()+3);
+      const iso = d => d.toISOString().slice(0,10);
+      res = await fetchPapers(place, 0, `publication_date:[${iso(a)}T00:00:00Z TO ${iso(b)}T23:59:59Z]`);
+      label = `in der Woche um den ${fmtDate(day)}`;
+    }
+    if(!res.response.numFound){
+      res = await fetchPapers(place, 0, `publication_date:[${y}-01-01T00:00:00Z TO ${y}-12-31T23:59:59Z]`);
+      label = `im Jahr ${y}`;
+    }
+    const n = res.response.numFound;
+    v.innerHTML = `<div class="stats"><div class="stat"><b>${num(n)}</b>Zeitungsseiten erwähnen „${esc(place)}“ ${esc(label)}</div></div>`
+      + (n? `<div class="list">${res.response.docs.map(d=>paperCard(d,place)).join("")}</div>`
+          : `<div class="note">Für ${esc(place)} gab es um ${y} keine Treffer. Probier den Tab „Zeitungen“ für alle Jahre.</div>`);
+  }catch(e){ v.innerHTML = errBox(e); }
+}
+
+async function renderPapers(more=false){
+  const place = state.place, v = $("#view");
+  const pg = state.pages.papers = more ? (state.pages.papers||0)+1 : 0;
+  if(!more) v.innerHTML = `<div class="spinner">Lade Zeitungen …</div>`;
+  try{
+    const res = await fetchPapers(place, pg*ROWS);
+    const n = res.response.numFound, html = res.response.docs.map(d=>paperCard(d,place)).join("");
+    if(!more){
+      v.innerHTML = `<div class="stats"><div class="stat"><b>${num(n)}</b>Zeitungsseiten erwähnen „${esc(place)}“</div></div>
+        <div class="list" id="plist">${html}</div>${n>ROWS?'<button class="more" id="pmore">Mehr laden</button>':""}`;
+    } else { $("#plist").insertAdjacentHTML("beforeend", html); }
+    const mb = $("#pmore"); if(mb){ mb.onclick=()=>renderPapers(true); if((pg+1)*ROWS>=n) mb.remove(); }
+  }catch(e){ v.innerHTML = errBox(e); }
+}
+
+async function renderImages(more=false){
+  const place = state.place, v = $("#view");
+  const pg = state.pages.images = more ? (state.pages.images||0)+1 : 0;
+  if(!more) v.innerHTML = `<div class="spinner">Lade Bilder aus DDB und Europeana …</div>`;
+  const [ddb, eur] = await Promise.allSettled([fetchDdbImages(place, pg*ROWS), fetchEuropeana(place, pg*ROWS)]);
+  let cards = [], errs = "";
+  if(ddb.status==="fulfilled"){
+    ddb.value.response.docs.forEach(d=>cards.push({key:(first(d.title)||"")+ddbYear(d.begin_time), html:ddbImageCard(d)}));
+  } else errs += errBox(ddb.reason, "DDB");
+  if(eur.status==="fulfilled" && eur.value.success!==false){
+    (eur.value.items||[]).forEach(it=>cards.push({key:(first(it.title)||"")+(first(it.year)||"")+first(it.edmPreview), html:eurCard(it)}));
+  } else errs += errBox(eur.reason || new Error(eur.value?.error||"Europeana-Fehler"), "Europeana");
+  const before = cards.length; cards = dedupe(cards);
+  const html = cards.map(c=>c.html).join("");
+  if(!more){
+    const nD = ddb.status==="fulfilled"? ddb.value.response.numFound : null;
+    const nE = eur.status==="fulfilled"? eur.value.totalResults : null;
+    const places = ddb.status==="fulfilled" ? (ddb.value.facet_counts?.facet_fields?.place_fct||[]) : [];
+    let pf = []; for(let i=0;i<places.length;i+=2) pf.push(`${esc(places[i])} (${num(places[i+1])})`);
+    const free = $("#freeOnly").checked ? "frei nutzbare " : "";
+    v.innerHTML = errs + `<div class="stats">
+        ${nD!==null?`<div class="stat"><b>${num(nD)}</b>${free}Bilder in der DDB</div>`:""}
+        ${nE!==null?`<div class="stat"><b>${num(nE)}</b>${free}Objekte bei Europeana</div>`:""}
+        ${before!==cards.length?`<div class="stat"><b>${before-cards.length}</b>Dubletten ausgeblendet</div>`:""}
+      </div>
+      ${pf.length?`<div class="meta" style="margin-bottom:10px">Ortsfeld der DDB-Treffer: ${pf.join(" · ")}</div>`:""}
+      ${cards.length?`<div class="grid" id="ilist">${html}</div><button class="more" id="imore">Mehr laden</button>`
+        :`<div class="note">Keine ${free}Bilder gefunden. Tipp: „nur frei nutzbar“ abschalten, um zu sehen, was mit Lizenzklärung möglich wäre.</div>`}`;
+  } else { $("#ilist").insertAdjacentHTML("beforeend", html); }
+  const mb = $("#imore"); if(mb) mb.onclick=()=>renderImages(true);
+}
+
+function errBox(e, src){ return `<div class="err"><b>${src? esc(src)+": ":""}Fehler.</b> ${esc(e?.message||e)}<br>
+  Hinweis: Öffne die Datei in einem normalen Browser (Chrome, Firefox, Safari). Wenn eine API Browser-Anfragen per CORS blockiert, braucht der Prototyp einen kleinen Proxy.</div>`; }
+
+function render(){ ({today:renderToday, papers:renderPapers, images:renderImages})[state.tab](); }
+
+/* ---------- Events ---------- */
+$("#chips").innerHTML = PRESETS.map(p=>`<button class="chip" type="button">${p}</button>`).join("");
+$("#chips").addEventListener("click", e=>{ if(e.target.matches(".chip")){ $("#place").value=e.target.textContent; go(); }});
+$("#form").addEventListener("submit", e=>{ e.preventDefault(); go(); });
+$("#tabs").addEventListener("click", e=>{
+  const b = e.target.closest(".tab"); if(!b) return;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t===b));
+  state.tab = b.dataset.tab; render();
+});
+["#freeOnly","#sort"].forEach(s=>$(s).addEventListener("change", render));
+document.addEventListener("click", async e=>{
+  const b = e.target.closest("[data-copy]"); if(!b) return;
+  try{ await navigator.clipboard.writeText(b.dataset.copy); b.textContent="kopiert ✓"; }catch{ b.textContent="Kopieren nicht möglich"; }
+});
+function go(){ const v=$("#place").value.trim(); if(!v) return; state.place=v; render(); }
+go();
+</script>
+</body>
+</html>
